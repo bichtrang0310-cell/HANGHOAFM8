@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Báo Cáo Trạng Thái Hàng Hóa</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface-2: #f7f9fc;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-dim: #64748b;
+    --text-light: #94a3b8;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --accent-light: #dbeafe;
+    --accent-glow: rgba(59,130,246,0.12);
+    --received: #10b981;
+    --received-dark: #059669;
+    --received-bg: #ecfdf5;
+    --received-border: #a7f3d0;
+    --partial: #f59e0b;
+    --partial-dark: #d97706;
+    --partial-bg: #fffbeb;
+    --partial-border: #fde68a;
+    --not-received: #ef4444;
+    --not-received-dark: #dc2626;
+    --not-received-bg: #fef2f2;
+    --not-received-border: #fecaca;
+    --radius: 14px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow: 0 4px 16px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.04);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Be Vietnam Pro', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: ''; position: fixed; top: -200px; right: -150px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(59,130,246,0.07) 0%, transparent 70%);
+    border-radius: 50%; pointer-events: none; z-index: 0;
+  }
+  body::after {
+    content: ''; position: fixed; bottom: -200px; left: -100px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(16,185,129,0.05) 0%, transparent 70%);
+    border-radius: 50%; pointer-events: none; z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 1300px; margin: 0 auto; padding: 20px 24px; }
+
+  /* HEADER */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: #fff;
+    box-shadow: 0 4px 14px rgba(59,130,246,0.3);
+    flex-shrink: 0;
+  }
+  .header-left h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+
+  .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .live-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 20px;
+    background: var(--received-bg); border: 1px solid var(--received-border);
+    font-size: 11px; font-weight: 600; color: var(--received-dark);
+  }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--received);
+    animation: pulse 2s infinite;
+  }
+  .sync-info { font-size: 11px; color: var(--text-light); }
+  .countdown { font-weight: 600; color: var(--text-dim); }
+
+  .btn {
+    padding: 8px 16px; border: none; border-radius: 8px;
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.2); }
+  .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--surface-2); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* MESSAGES */
+  .msg-container { margin-bottom: 12px; }
+  .error-msg {
+    background: var(--not-received-bg); border: 1px solid var(--not-received-border);
+    border-radius: 10px; padding: 12px 16px; color: #b91c1c;
+    font-size: 13px; line-height: 1.6; display: flex; align-items: flex-start; gap: 8px;
+  }
+  .success-msg {
+    background: var(--received-bg); border: 1px solid var(--received-border);
+    border-radius: 10px; padding: 10px 16px; color: #065f46;
+    font-size: 13px; display: flex; align-items: center; gap: 8px;
+  }
+
+  /* STATS */
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 14px; margin-bottom: 16px;
+  }
+  .stat-card {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 20px; overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 4px solid transparent;
+    animation: slideUp 0.4s ease;
+  }
+  .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .stat-card.total { border-left-color: var(--accent); }
+  .stat-card.received { border-left-color: var(--received); background: linear-gradient(135deg, var(--received-bg), #fff); }
+  .stat-card.partial { border-left-color: var(--partial); background: linear-gradient(135deg, var(--partial-bg), #fff); }
+  .stat-card.not-received { border-left-color: var(--not-received); background: linear-gradient(135deg, var(--not-received-bg), #fff); }
+
+  .stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .stat-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .stat-card.total .stat-icon { background: var(--accent-light); }
+  .stat-card.received .stat-icon { background: rgba(16,185,129,0.15); }
+  .stat-card.partial .stat-icon { background: rgba(245,158,11,0.15); }
+  .stat-card.not-received .stat-icon { background: rgba(239,68,68,0.15); }
+  .stat-pct { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+  .stat-card.received .stat-pct { background: var(--received-bg); color: var(--received-dark); }
+  .stat-card.partial .stat-pct { background: var(--partial-bg); color: var(--partial-dark); }
+  .stat-card.not-received .stat-pct { background: var(--not-received-bg); color: var(--not-received-dark); }
+
+  .stat-number { font-size: 32px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+  .stat-card.total .stat-number { color: var(--accent); }
+  .stat-card.received .stat-number { color: var(--received-dark); }
+  .stat-card.partial .stat-number { color: var(--partial-dark); }
+  .stat-card.not-received .stat-number { color: var(--not-received-dark); }
+  .stat-label { font-size: 13px; color: var(--text-dim); font-weight: 500; margin-top: 4px; }
+
+  /* PROGRESS BAR */
+  .overall-progress {
+    background: var(--surface); border-radius: 10px;
+    padding: 14px 18px; margin-bottom: 16px;
+    box-shadow: var(--shadow-sm); border: 1px solid var(--border);
+  }
+  .overall-progress-label {
+    display: flex; justify-content: space-between;
+    font-size: 12px; font-weight: 600; color: var(--text-dim); margin-bottom: 8px;
+  }
+  .progress-track { height: 12px; border-radius: 6px; background: var(--bg); overflow: hidden; display: flex; }
+  .progress-seg { height: 100%; transition: width 0.6s ease; }
+  .progress-seg.received { background: var(--received); }
+  .progress-seg.partial { background: var(--partial); }
+  .progress-seg.not-received { background: var(--not-received); border-radius: 0 6px 6px 0; }
+  .progress-legend { display: flex; gap: 16px; margin-top: 8px; font-size: 11px; color: var(--text-dim); }
+  .progress-legend span { display: flex; align-items: center; gap: 5px; }
+  .ldot { width: 8px; height: 8px; border-radius: 2px; }
+
+  /* TOOLBAR */
+  .toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; flex-wrap: wrap; }
+  .search-box { flex: 1; min-width: 200px; position: relative; }
+  .search-box input {
+    width: 100%; padding: 9px 12px 9px 36px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    font-family: inherit; font-size: 13px; box-shadow: var(--shadow-sm);
+  }
+  .search-box input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .search-box::before { content: '🔍'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; opacity: 0.4; }
+
+  .filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    padding: 7px 14px; border-radius: 18px;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; border: 1.5px solid var(--border);
+    background: var(--surface); color: var(--text-dim);
+    transition: all 0.2s;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip.active.c-received { background: var(--received); border-color: var(--received); }
+  .chip.active.c-partial { background: var(--partial); border-color: var(--partial); color: #fff; }
+  .chip.active.c-not-received { background: var(--not-received); border-color: var(--not-received); }
+  .chip .count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 20px; height: 18px; border-radius: 9px;
+    font-size: 10px; font-weight: 700; margin-left: 4px; padding: 0 5px;
+    background: rgba(0,0,0,0.08);
+  }
+  .chip.active .count { background: rgba(255,255,255,0.3); }
+
+  /* TABLE */
+  .table-wrapper {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+  }
+  .table-scroll { overflow-x: auto; max-height: 65vh; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: var(--surface-2); position: sticky; top: 0; z-index: 2; }
+  th {
+    padding: 12px 14px; text-align: left;
+    font-weight: 700; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--text-dim); border-bottom: 2px solid var(--border);
+    white-space: nowrap; cursor: pointer; user-select: none;
+  }
+  th:hover { color: var(--accent); }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+
+  tr.row-received { background: var(--received-bg); }
+  tr.row-received:hover td { background: rgba(16,185,129,0.08); }
+  tr.row-partial { background: var(--partial-bg); }
+  tr.row-partial:hover td { background: rgba(245,158,11,0.08); }
+  tr.row-not-received { background: var(--not-received-bg); }
+  tr.row-not-received:hover td { background: rgba(239,68,68,0.08); }
+  tr:hover td { background: rgba(59,130,246,0.03); }
+
+  .status-badge {
+    padding: 4px 10px; border-radius: 6px;
+    font-size: 11px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 5px;
+    letter-spacing: 0.3px;
+  }
+  .status-badge.received { background: var(--received); color: #fff; }
+  .status-badge.partial { background: var(--partial); color: #fff; }
+  .status-badge.not-received { background: var(--not-received); color: #fff; }
+
+  .progress-bar {
+    width: 80px; height: 6px; background: rgba(0,0,0,0.08);
+    border-radius: 3px; overflow: hidden; display: inline-block;
+    vertical-align: middle; margin-right: 6px;
+  }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--text-dim); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.3; }
+  .empty-state p { font-size: 14px; color: var(--text-light); }
+
+  /* LOADING OVERLAY */
+  .loading-overlay {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 200; transition: opacity 0.4s;
+  }
+  .loading-overlay.hide { opacity: 0; pointer-events: none; }
+  .loader {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 4px solid var(--border); border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+  }
+  .loading-text { margin-top: 16px; font-size: 14px; color: var(--text-dim); font-weight: 500; }
+
+  .footer { text-align: center; padding: 24px 0 12px; color: var(--text-light); font-size: 11px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(15,23,42,0.4); backdrop-filter: blur(6px);
+    z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal {
+    background: var(--surface); border-radius: 16px; padding: 28px;
+    max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+  }
+  .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  .modal h3 { font-size: 14px; font-weight: 600; margin: 14px 0 6px; color: var(--accent); }
+  .modal p { font-size: 13px; line-height: 1.7; color: var(--text-dim); }
+  .modal code { background: var(--accent-light); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--accent); }
+  .modal .close-btn { margin-top: 16px; width: 100%; justify-content: center; }
+
+  /* Settings modal */
+  .settings-row { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; margin-top: 12px; }
+  .settings-row .input-group { flex: 1; min-width: 200px; }
+  .input-group label { display: block; font-size: 10px; font-weight: 600; color: var(--text-dim); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .input-group input, .input-group select {
+    width: 100%; padding: 8px 12px; background: var(--surface-2); border: 1.5px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: inherit; font-size: 13px;
+  }
+  .input-group input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+  @media (max-width: 768px) {
+    .stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .stat-number { font-size: 26px; }
+  }
+  @media (max-width: 480px) {
+    .app { padding: 12px; }
+    .header-left h1 { font-size: 18px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+</style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loader"></div>
+  <div class="loading-text">Đang tải dữ liệu từ Google Sheets...</div>
+</div>
+
+<div class="app">
+  <div class="header">
+    <div class="header-left">
+      <span class="logo-icon">📦</span>
+      <div>
+        <h1>Quản Lý Hàng Hóa</h1>
+        <p>Báo cáo trạng thái nhận hàng — Cửa hàng mới</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="live-badge"><span class="live-dot"></span> LIVE</div>
+      <span class="sync-info" id="syncInfo">Đang kết nối...</span>
+      <button class="btn btn-secondary" onclick="loadData()" id="refreshBtn">🔄 Tải lại</button>
+      <button class="btn btn-secondary" onclick="showSettings()">⚙️</button>
+      <button class="btn btn-secondary" onclick="showInstructions()">📖</button>
+    </div>
+  </div>
+
+  <div id="messages" class="msg-container"></div>
+
+  <div class="stats" id="statsSection">
+    <div class="stat-card total">
+      <div class="stat-top"><div class="stat-icon">📊</div></div>
+      <div class="stat-number" id="statTotal">—</div>
+      <div class="stat-label">Tổng mặt hàng</div>
+    </div>
+    <div class="stat-card received">
+      <div class="stat-top"><div class="stat-icon">✅</div><span class="stat-pct" id="pctReceived">—</span></div>
+      <div class="stat-number" id="statReceived">—</div>
+      <div class="stat-label">Đã nhận đủ</div>
+    </div>
+    <div class="stat-card partial">
+      <div class="stat-top"><div class="stat-icon">⚠️</div><span class="stat-pct" id="pctPartial">—</span></div>
+      <div class="stat-number" id="statPartial">—</div>
+      <div class="stat-label">Chưa nhận đủ</div>
+    </div>
+    <div class="stat-card not-received">
+      <div class="stat-top"><div class="stat-icon">❌</div><span class="stat-pct" id="pctNotReceived">—</span></div>
+      <div class="stat-number" id="statNotReceived">—</div>
+      <div class="stat-label">Chưa nhận</div>
+    </div>
+  </div>
+
+  <div class="overall-progress" id="progressSection">
+    <div class="overall-progress-label">
+      <span>Tiến độ nhận hàng tổng thể</span>
+      <span id="overallPct">—</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-seg received" id="progReceived" style="width:0"></div>
+      <div class="progress-seg partial" id="progPartial" style="width:0"></div>
+      <div class="progress-seg not-received" id="progNotReceived" style="width:0"></div>
+    </div>
+    <div class="progress-legend">
+      <span><span class="ldot" style="background:var(--received)"></span> Đã nhận đủ</span>
+      <span><span class="ldot" style="background:var(--partial)"></span> Nhận thiếu</span>
+      <span><span class="ldot" style="background:var(--not-received)"></span> Chưa nhận</span>
+    </div>
+  </div>
+
+  <div class="toolbar" id="toolbarSection">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Tìm kiếm mặt hàng..." oninput="filterTable()">
+    </div>
+    <div class="filter-chips">
+      <div class="chip active" onclick="setFilter('all', this)">Tất cả <span class="count" id="countAll">0</span></div>
+      <div class="chip c-received" onclick="setFilter('received', this)">✅ Đã nhận <span class="count" id="countReceived">0</span></div>
+      <div class="chip c-partial" onclick="setFilter('partial', this)">⚠️ Nhận thiếu <span class="count" id="countPartial">0</span></div>
+      <div class="chip c-not-received" onclick="setFilter('not-received', this)">❌ Chưa nhận <span class="count" id="countNotReceived">0</span></div>
+    </div>
+  </div>
+
+  <div class="table-wrapper" id="tableWrapper">
+    <div class="table-scroll">
+      <table>
+        <thead><tr id="tableHead"></tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="emptyState" style="display:none;">
+      <div class="icon">📭</div>
+      <p>Không tìm thấy hàng hóa nào phù hợp</p>
+    </div>
+  </div>
+
+  <div class="footer">Hệ thống Quản Lý Hàng Hóa — Tự động cập nhật realtime từ Google Sheets</div>
+</div>
+
+<!-- Instructions Modal -->
+<div class="modal-overlay hidden" id="instructionsModal" onclick="if(event.target===this)hideInstructions()">
+  <div class="modal">
+    <h2>📖 Hướng Dẫn</h2>
+    <h3>Cách hoạt động</h3>
+    <p>Hệ thống tự động kết nối Google Sheet và cập nhật dữ liệu realtime mỗi <strong>30 giây</strong>.</p>
+    <h3>Cách tính trạng thái</h3>
+    <p>Hệ thống tự phát hiện cột "Số lượng đặt" và "Số nhận" rồi tính:</p>
+    <p>• <code>Đã nhận</code> — Số nhận ≥ Số đặt</p>
+    <p>• <code>Nhận thiếu</code> — 0 &lt; Số nhận &lt; Số đặt</p>
+    <p>• <code>Chưa nhận</code> — Số nhận = 0 hoặc trống</p>
+    <p>Nếu Sheet có cột "Trạng thái" riêng, hệ thống ưu tiên dùng cột đó.</p>
+    <h3>Thay đổi Sheet</h3>
+    <p>Nhấn nút <strong>⚙️</strong> ở góc phải để đổi Sheet ID hoặc tab.</p>
+    <button class="btn btn-primary close-btn" onclick="hideInstructions()">Đã hiểu ✓</button>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay hidden" id="settingsModal" onclick="if(event.target===this)hideSettings()">
+  <div class="modal">
+    <h2>⚙️ Cài đặt kết nối</h2>
+    <p>Thay đổi Google Sheet hoặc tab dữ liệu.</p>
+    <div class="settings-row">
+      <div class="input-group">
+        <label>URL hoặc ID Google Sheet</label>
+        <input type="text" id="settingsSheetUrl">
+      </div>
+      <div class="input-group" style="max-width:140px;">
+        <label>Tab</label>
+        <input type="text" id="settingsSheetName">
+      </div>
+    </div>
+    <div class="settings-row">
+      <div class="input-group" style="max-width:180px;">
+        <label>Tự động tải lại (giây)</label>
+        <input type="number" id="settingsInterval" min="10" max="300" value="30">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-primary" onclick="saveSettings()" style="flex:1;justify-content:center;">💾 Lưu & Tải lại</button>
+      <button class="btn btn-secondary" onclick="hideSettings()">Hủy</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============================================
+  // 🔧 CẤU HÌNH CỐ ĐỊNH — THAY ĐỔI TẠI ĐÂY
+  // ============================================
+  const DEFAULT_SHEET_ID = '1Y2ERsYFQDRgx9nlnqONYR3mcr9ahJ13F0FFJ488YwSw';
+  const DEFAULT_SHEET_NAME = 'Sheet1';
+  const DEFAULT_REFRESH_INTERVAL = 30; // giây
+  // ============================================
+
+  let CONFIG = {
+    sheetId: DEFAULT_SHEET_ID,
+    sheetName: DEFAULT_SHEET_NAME,
+    refreshInterval: DEFAULT_REFRESH_INTERVAL
+  };
+
+  let allData = [];
+  let headers = [];
+  let computedStatuses = [];
+  let currentFilter = 'all';
+  let refreshTimer = null;
+  let countdownTimer = null;
+  let countdown = 0;
+  let isFirstLoad = true;
+
+  const STATUS_KEYWORDS = ['trạng thái', 'trang thai', 'status'];
+  const QTY_ORDER_KEYWORDS = ['đặt', 'dat', 'order', 'yêu cầu', 'yeu cau'];
+  const QTY_RECV_KEYWORDS = ['nhận', 'nhan', 'received'];
+  const QTY_RECV_EXCLUDE = ['trạng', 'trang', 'ngày', 'ngay', 'status'];
+
+  function detectStatusFromText(v) {
+    if (!v) return null;
+    v = v.toString().toLowerCase().trim();
+    if (v.includes('chưa nhận đủ') || v.includes('chua nhan du') || v.includes('nhận thiếu') || v.includes('nhan thieu') || v === 'partial' || v === 'thiếu') return 'partial';
+    if (v.includes('đã nhận') || v.includes('da nhan') || v === 'received' || v.includes('hoàn thành') || v.includes('đầy đủ')) return 'received';
+    if (v.includes('chưa nhận') || v.includes('chua nhan') || v === 'not received' || v.includes('chưa')) return 'not-received';
+    return null;
+  }
+
+  function calcStatusFromQty(ordered, received) {
+    const o = parseFloat(ordered) || 0;
+    const r = parseFloat(received) || 0;
+    if (o <= 0) return 'not-received';
+    if (r >= o) return 'received';
+    if (r > 0) return 'partial';
+    return 'not-received';
+  }
+
+  function findColIndex(hdrs, keywords, exclude) {
+    for (let i = 0; i < hdrs.length; i++) {
+      const h = hdrs[i].toLowerCase().trim();
+      if (keywords.some(k => h.includes(k)) && !(exclude && exclude.some(k => h.includes(k)))) return i;
+    }
+    return -1;
+  }
+
+  function showMsg(type, text) {
+    const el = document.getElementById('messages');
+    el.innerHTML = `<div class="${type}-msg">${type === 'error' ? '⚠️' : '✅'} <div>${text}</div></div>`;
+    if (type === 'success') setTimeout(() => el.innerHTML = '', 4000);
+  }
+
+  // JSONP
+  let jc = 0;
+  function fetchSheet(id, name) {
+    return new Promise((resolve, reject) => {
+      const cb = '_c' + (++jc) + '_' + Date.now();
+      const to = setTimeout(() => { cleanup(); reject(new Error('Timeout kết nối Google Sheets.')); }, 15000);
+      function cleanup() { clearTimeout(to); delete window[cb]; const s = document.getElementById('j_' + cb); if (s) s.remove(); }
+      window[cb] = function(r) {
+        cleanup();
+        if (r.status === 'error') { reject(new Error('Lỗi Google Sheet.')); return; }
+        const t = r.table;
+        resolve({ cols: t.cols.map(c => c.label || ''), rows: t.rows.map(r => r.c.map(c => { if (!c) return ''; return c.f || (c.v != null ? c.v.toString() : ''); })) });
+      };
+      const s = document.createElement('script');
+      s.id = 'j_' + cb;
+      s.src = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json;responseHandler:${cb}&sheet=${encodeURIComponent(name)}`;
+      s.onerror = () => { cleanup(); reject(new Error('Không thể tải Sheet. Kiểm tra quyền chia sẻ.')); };
+      document.head.appendChild(s);
+    });
+  }
+
+  async function loadData() {
+    const btn = document.getElementById('refreshBtn');
+    btn.disabled = true; btn.innerHTML = '⏳';
+
+    try {
+      const { cols, rows } = await fetchSheet(CONFIG.sheetId, CONFIG.sheetName);
+      if (cols.every(c => !c) && rows.length > 0) { headers = rows[0]; allData = rows.slice(1); }
+      else { headers = cols; allData = rows; }
+
+      computeStatuses();
+
+      if (isFirstLoad) {
+        document.getElementById('loadingOverlay').classList.add('hide');
+        setTimeout(() => document.getElementById('loadingOverlay').style.display = 'none', 400);
+        isFirstLoad = false;
+      }
+
+      renderAll();
+      updateSyncInfo();
+    } catch (err) {
+      showMsg('error', err.message);
+      if (isFirstLoad) {
+        document.getElementById('loadingOverlay').classList.add('hide');
+        isFirstLoad = false;
+      }
+    } finally {
+      btn.disabled = false; btn.innerHTML = '🔄 Tải lại';
+    }
+  }
+
+  function computeStatuses() {
+    const statusCol = findColIndex(headers, STATUS_KEYWORDS);
+    const qtyOrderCol = findColIndex(headers, QTY_ORDER_KEYWORDS);
+    const qtyRecvCol = findColIndex(headers, QTY_RECV_KEYWORDS, QTY_RECV_EXCLUDE);
+
+    computedStatuses = allData.map(row => {
+      if (statusCol >= 0) { const s = detectStatusFromText(row[statusCol]); if (s) return s; }
+      if (qtyOrderCol >= 0 && qtyRecvCol >= 0) return calcStatusFromQty(row[qtyOrderCol], row[qtyRecvCol]);
+      if (qtyRecvCol >= 0) return (parseFloat(row[qtyRecvCol]) || 0) > 0 ? 'received' : 'not-received';
+      return 'not-received';
+    });
+  }
+
+  function renderAll() { renderHeaders(); updateStats(); filterTable(); }
+
+  function renderHeaders() {
+    document.getElementById('tableHead').innerHTML =
+      headers.map((h, i) => `<th onclick="sortTable(${i})">${h || `Cột ${i+1}`} ↕</th>`).join('') +
+      '<th>TRẠNG THÁI</th>';
+  }
+
+  function filterTable() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = [];
+    for (let i = 0; i < allData.length; i++) {
+      const row = allData[i], status = computedStatuses[i];
+      if (search && !row.some(c => c.toString().toLowerCase().includes(search))) continue;
+      if (currentFilter !== 'all' && status !== currentFilter) continue;
+      filtered.push({ row, status });
+    }
+
+    const tbody = document.getElementById('tableBody');
+    const empty = document.getElementById('emptyState');
+    if (!filtered.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+    empty.style.display = 'none';
+
+    const qO = findColIndex(headers, QTY_ORDER_KEYWORDS);
+    const qR = findColIndex(headers, QTY_RECV_KEYWORDS, QTY_RECV_EXCLUDE);
+    const labels = { received: 'ĐÃ NHẬN', partial: 'NHẬN THIẾU', 'not-received': 'CHƯA NHẬN' };
+
+    tbody.innerHTML = filtered.map(({ row, status }) => {
+      const cells = row.map((cell, i) => {
+        if (i === qR && qO >= 0) {
+          const o = parseFloat(row[qO]) || 0, r = parseFloat(cell) || 0;
+          const pct = o > 0 ? Math.min(100, r / o * 100) : 0;
+          const clr = pct >= 100 ? 'var(--received)' : pct > 0 ? 'var(--partial)' : 'var(--not-received)';
+          return `<td><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${clr}"></div></div> ${cell || 0}</td>`;
+        }
+        return `<td>${cell}</td>`;
+      }).join('');
+      return `<tr class="row-${status}">${cells}<td><span class="status-badge ${status}">${labels[status]}</span></td></tr>`;
+    }).join('');
+  }
+
+  function updateStats() {
+    let r = 0, p = 0, n = 0;
+    computedStatuses.forEach(s => { if (s === 'received') r++; else if (s === 'partial') p++; else n++; });
+    const t = allData.length;
+    document.getElementById('statTotal').textContent = t;
+    document.getElementById('statReceived').textContent = r;
+    document.getElementById('statPartial').textContent = p;
+    document.getElementById('statNotReceived').textContent = n;
+
+    const pR = t ? Math.round(r/t*100) : 0, pP = t ? Math.round(p/t*100) : 0, pN = t ? Math.round(n/t*100) : 0;
+    document.getElementById('pctReceived').textContent = pR + '%';
+    document.getElementById('pctPartial').textContent = pP + '%';
+    document.getElementById('pctNotReceived').textContent = pN + '%';
+    document.getElementById('overallPct').textContent = pR + '% hoàn thành';
+    document.getElementById('progReceived').style.width = pR + '%';
+    document.getElementById('progPartial').style.width = pP + '%';
+    document.getElementById('progNotReceived').style.width = pN + '%';
+    document.getElementById('countAll').textContent = t;
+    document.getElementById('countReceived').textContent = r;
+    document.getElementById('countPartial').textContent = p;
+    document.getElementById('countNotReceived').textContent = n;
+  }
+
+  function updateSyncInfo() {
+    countdown = CONFIG.refreshInterval;
+    const el = document.getElementById('syncInfo');
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+      countdown--;
+      if (countdown <= 0) { countdown = CONFIG.refreshInterval; }
+      el.innerHTML = `Cập nhật: ${new Date().toLocaleTimeString('vi-VN').split(':').slice(0,2).join(':')} · <span class="countdown">${countdown}s</span>`;
+    }, 1000);
+    el.innerHTML = `Vừa cập nhật · <span class="countdown">${countdown}s</span>`;
+  }
+
+  function startAutoRefresh() {
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(loadData, CONFIG.refreshInterval * 1000);
+  }
+
+  function setFilter(filter, el) {
+    currentFilter = filter;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    filterTable();
+  }
+
+  let sortCol = -1, sortAsc = true;
+  function sortTable(col) {
+    if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = true; }
+    const paired = allData.map((row, i) => ({ row, status: computedStatuses[i] }));
+    paired.sort((a, b) => {
+      let va = a.row[col] || '', vb = b.row[col] || '';
+      const na = parseFloat(va), nb = parseFloat(vb);
+      if (!isNaN(na) && !isNaN(nb)) return sortAsc ? na - nb : nb - na;
+      return sortAsc ? va.toString().localeCompare(vb.toString(), 'vi') : vb.toString().localeCompare(va.toString(), 'vi');
+    });
+    allData = paired.map(p => p.row);
+    computedStatuses = paired.map(p => p.status);
+    filterTable();
+  }
+
+  // Modals
+  function showInstructions() { document.getElementById('instructionsModal').classList.remove('hidden'); }
+  function hideInstructions() { document.getElementById('instructionsModal').classList.add('hidden'); }
+  function showSettings() {
+    document.getElementById('settingsSheetUrl').value = CONFIG.sheetId;
+    document.getElementById('settingsSheetName').value = CONFIG.sheetName;
+    document.getElementById('settingsInterval').value = CONFIG.refreshInterval;
+    document.getElementById('settingsModal').classList.remove('hidden');
+  }
+  function hideSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
+  function saveSettings() {
+    const url = document.getElementById('settingsSheetUrl').value.trim();
+    const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    CONFIG.sheetId = match ? match[1] : (/^[a-zA-Z0-9-_]{20,}$/.test(url) ? url : CONFIG.sheetId);
+    CONFIG.sheetName = document.getElementById('settingsSheetName').value.trim() || 'Sheet1';
+    CONFIG.refreshInterval = Math.max(10, parseInt(document.getElementById('settingsInterval').value) || 30);
+    try { localStorage.setItem('gt_cfg', JSON.stringify(CONFIG)); } catch(e) {}
+    hideSettings();
+    startAutoRefresh();
+    loadData();
+  }
+
+  // INIT
+  (function() {
+    try {
+      const saved = localStorage.getItem('gt_cfg');
+      if (saved) { const c = JSON.parse(saved); Object.assign(CONFIG, c); }
+    } catch(e) {}
+    loadData();
+    startAutoRefresh();
+  })();
+</script>
+
+</body>
+</html>
